@@ -64,20 +64,9 @@ app.layout = [
             'whiteSpace': 'normal',         # Allow text wrapping
             'height': 'auto',               # Allow dynamic height
         },
-        style_data_conditional=[
-            {
-                'if': {'column_id': 'country'},  # Specific column for country
-                'textAlign': 'left'              # Align text to the left
-            },
-            {
-                'if': {'column_id': 'year'},     # Specific column for year
-                'textAlign': 'center'            # Center align text
-            },
-            {
-                'if': {'column_id': 'pop'},      # Specific column for population
-                'textAlign': 'right'             # Align text to the right
-            },
-        ]
+        style_data_conditional={
+            'textAlign': 'center',            # Center align text
+        }
     )
 ]
 
