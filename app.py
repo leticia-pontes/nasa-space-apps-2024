@@ -8,10 +8,11 @@ from dash import dash_table
 csv_file = 'assets/downloaded_file.csv'
 
 def load_csv():
+    """Load the CSV file into a DataFrame."""
     return pd.read_csv(csv_file)
 
-# Function to get the last modified time of the file
 def get_last_modified_time(filepath):
+    """Get the last modified time of the file."""
     return os.path.getmtime(filepath)
 
 # Initialize the Dash app
@@ -22,8 +23,8 @@ df = load_csv()
 last_modified = get_last_modified_time(csv_file)
 
 # Define the app layout
-app.layout = [
-    html.H1(children='Title of Dash App', style={'textAlign': 'center'}),
+app.layout = html.Div([
+    html.H1('Population by Year Graph', style={'textAlign': 'center'}),
     dcc.Dropdown(df['country'].unique(), 'Brazil', id='dropdown-selection'),
     html.Br(),
     dcc.Input(
@@ -31,88 +32,80 @@ app.layout = [
         type='number',
         placeholder='Enter Year',
         style={'marginBottom': '20px', 'width': '10%'},
-        min=1900,  # Set a minimum year
-        step=1,    # Set step to 1 to ensure whole numbers only
+        min=1900,
+        step=1,
         value=None,
-        inputMode='numeric',  # This ensures the numeric keyboard on mobile
-        debounce=True,  # Optional: Delay input processing to avoid rapid updates
+        inputMode='numeric',
+        debounce=True,
     ),
     html.Button('Submit', id='submit-button', n_clicks=0, style={'marginRight': '10px', 'marginLeft': '10px'}),
     html.Button('Clear', id='clear-button', n_clicks=0),
-    
-    # Add margins around the graph
-    dcc.Graph(id='graph-content'),
-    html.Br(), html.Br(),
-    
-    dash_table.DataTable(
-        id='data-table',
-        columns=[],
-        data=[],
-        page_size=10,
-        style_table={'margin': '20px'},  # Add margin to the table
-        style_cell={
-            'padding': '10px',    # Add padding to cells
-            'border': '1px solid #d9d9d9',  # Add border to cells
-        },
-        style_header={
-            'backgroundColor': '#f1f1f1',  # Background color for header
-            'fontWeight': 'bold',           # Bold header text
-            'textAlign': 'center',          # Center align header text
-            'border': '1px solid #d9d9d9',  # Border for header
-        },
-        style_data={
-            'whiteSpace': 'normal',         # Allow text wrapping
-            'height': 'auto',               # Allow dynamic height
-        },
-        style_data_conditional={
-            'textAlign': 'center',            # Center align text
-        }
-    )
-]
+    html.Div(id='output-container'),  # Holds either the graph or the table based on the state
+])
 
 @app.callback(
-    [Output('graph-content', 'figure'),  # Output for the graph
-     Output('data-table', 'data'),  # Output for table data
-     Output('data-table', 'columns'),  # Output for table columns
-     Output('year-input', 'value')],  # Clear input field
+    [Output('output-container', 'children'), Output('year-input', 'value')],
     [Input('dropdown-selection', 'value'),
      Input('year-input', 'value'),
      Input('submit-button', 'n_clicks'),
      Input('clear-button', 'n_clicks')]
 )
+
 def update_output(selected_country, input_year, submit_clicks, clear_clicks):
     global df, last_modified
 
-    # Check if the file was modified
+    # Reload CSV if modified
     current_modified = get_last_modified_time(csv_file)
-
     if current_modified != last_modified:
-        # Reload the CSV if it was modified
         df = load_csv()
         last_modified = current_modified
 
     # Handle Clear button click
     if clear_clicks > 0:
-        return {}, [], [], None  # Clear graph, table, and input
+        return generate_population_graph(selected_country), None  # Clear input and show graph
 
     # Handle Submit button click
     if submit_clicks > 0 and input_year is not None:
-        dff = df[(df['country'] == selected_country) & (df['year'] == int(input_year))]
+        return handle_submit(selected_country, input_year)
 
-        # Check if the filtered DataFrame is empty
-        if not dff.empty:
-            # Define columns for the table
-            columns = [{"name": col, "id": col} for col in ['country', 'year', 'pop']]
-            return None, dff.to_dict('records'), columns, None  # Hide graph and show table
+    # Show default graph if no valid input
+    return generate_population_graph(selected_country), input_year
 
-    # If no valid input year or submit clicks, show the graph
+def generate_population_graph(selected_country):
+    """Generate a bar graph for the selected country."""
     dff = df[df['country'] == selected_country]
     fig = px.bar(dff, x='year', y='pop', title=f'Population over Years for {selected_country}')
-
-    # Add margin to the figure
     fig.update_layout(margin=dict(l=200, r=200, t=80, b=100))
+    return dcc.Graph(id='graph-content', figure=fig)
 
-    return fig, [], [], input_year  # Show graph when no valid table data
+def handle_submit(selected_country, input_year):
+    """Handle the submission of the year input."""
+    dff = df[(df['country'] == selected_country) & (df['year'] == int(input_year))]
+
+    if not dff.empty:
+        columns = [{"name": col, "id": col} for col in ['country', 'year', 'pop']]
+        table = dash_table.DataTable(
+            id='data-table',
+            columns=columns,
+            data=dff.to_dict('records'),
+            page_size=10,
+            style_table={'margin': '20px'},
+            style_cell={'padding': '10px', 'border': '1px solid #d9d9d9'},
+            style_header={
+                'backgroundColor': '#f1f1f1',
+                'fontWeight': 'bold',
+                'textAlign': 'center',
+                'border': '1px solid #d9d9d9',
+            },
+            style_data_conditional=[
+                {'if': {'column_id': 'country'}, 'textAlign': 'left'},
+                {'if': {'column_id': 'year'}, 'textAlign': 'center'},
+                {'if': {'column_id': 'pop'}, 'textAlign': 'right'},
+            ]
+        )
+        return table, None  # Show table and clear input
+
+    return generate_population_graph(selected_country), input_year  # Show graph
 
 # Run the app
 if __name__ == '__main__':
