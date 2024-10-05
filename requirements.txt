@@ -1,0 +1,13 @@
+pandas
+matplotlib
+cartopy
+scikit-image
+requests
+geemap
+earthengine-api
+folium
+numpy
+Pillow
+mapbox-vector-tile
+lxml
+owslib
