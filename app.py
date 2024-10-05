@@ -1,112 +1,51 @@
-import os
-import pandas as pd
+import dash
+from dash import dcc, html, Input, Output
 import plotly.express as px
-from dash import Dash, html, dcc, callback, Output, Input
-from dash import dash_table
+import pandas as pd
 
-# Path to the local CSV file
-csv_file = 'assets/downloaded_file.csv'
+data = {
+    'latitude': [37.7749, 34.0522],
+    'longitude': [-122.4194, -118.2437],
+    'city': ['San Francisco', 'Los Angeles'],
+    'population': [883305, 3990456]
+}
+df = pd.DataFrame(data)
 
-def load_csv():
-    """Load the CSV file into a DataFrame."""
-    return pd.read_csv(csv_file)
+app = dash.Dash(__name__)
 
-def get_last_modified_time(filepath):
-    """Get the last modified time of the file."""
-    return os.path.getmtime(filepath)
-
-# Initialize the Dash app
-app = Dash(__name__)
-
-# Load initial data
-df = load_csv()
-last_modified = get_last_modified_time(csv_file)
-
-# Define the app layout
 app.layout = html.Div([
-    html.H1('Population by Year Graph', style={'textAlign': 'center'}),
-    dcc.Dropdown(df['country'].unique(), 'Brazil', id='dropdown-selection'),
-    html.Br(),
-    dcc.Input(
-        id='year-input',
-        type='number',
-        placeholder='Enter Year',
-        style={'marginBottom': '20px', 'width': '10%'},
-        min=1900,
-        step=1,
-        value=None,
-        inputMode='numeric',
-        debounce=True,
+    html.H1('Mapa Interativo'),
+    dcc.Dropdown(
+        id='city-filter',
+        options=[{'label': city, 'value': city} for city in df['city']],
+        multi=True,
+        placeholder='Selecione as cidades'
     ),
-    html.Button('Submit', id='submit-button', n_clicks=0, style={'marginRight': '10px', 'marginLeft': '10px'}),
-    html.Button('Clear', id='clear-button', n_clicks=0),
-    html.Div(id='output-container'),  # Holds either the graph or the table based on the state
+    dcc.Graph(id='map', style={'height': '70vh', 'width': '70%', 'margin':'auto'})
 ])
 
 @app.callback(
-    [Output('output-container', 'children'), Output('year-input', 'value')],
-    [Input('dropdown-selection', 'value'),
-     Input('year-input', 'value'),
-     Input('submit-button', 'n_clicks'),
-     Input('clear-button', 'n_clicks')]
+    Output('map', 'figure'),
+    Input('city-filter', 'value')
 )
+def update_map(selected_cities):
+    if not selected_cities:
+        filtered_df = df
+    else:
+        filtered_df = df[df['city'].isin(selected_cities)]
+    
+    fig = px.scatter_mapbox(
+        filtered_df,
+        lat='latitude',
+        lon='longitude',
+        hover_name='city',
+        size='population',
+        size_max=15,
+        zoom=4,
+        title='População das Cidades Selecionadas'
+    )
+    fig.update_layout(mapbox_style="open-street-map")
+    return fig
 
-def update_output(selected_country, input_year, submit_clicks, clear_clicks):
-    global df, last_modified
-
-    # Reload CSV if modified
-    current_modified = get_last_modified_time(csv_file)
-    if current_modified != last_modified:
-        df = load_csv()
-        last_modified = current_modified
-
-    # Handle Clear button click
-    if clear_clicks > 0:
-        return generate_population_graph(selected_country), None  # Clear input and show graph
-
-    # Handle Submit button click
-    if submit_clicks > 0 and input_year is not None:
-        return handle_submit(selected_country, input_year)
-
-    # Show default graph if no valid input
-    return generate_population_graph(selected_country), input_year
-
-def generate_population_graph(selected_country):
-    """Generate a bar graph for the selected country."""
-    dff = df[df['country'] == selected_country]
-    fig = px.bar(dff, x='year', y='pop', title=f'Population over Years for {selected_country}')
-    fig.update_layout(margin=dict(l=200, r=200, t=80, b=100))
-    return dcc.Graph(id='graph-content', figure=fig)
-
-def handle_submit(selected_country, input_year):
-    """Handle the submission of the year input."""
-    dff = df[(df['country'] == selected_country) & (df['year'] == int(input_year))]
-
-    if not dff.empty:
-        columns = [{"name": col, "id": col} for col in ['country', 'year', 'pop']]
-        table = dash_table.DataTable(
-            id='data-table',
-            columns=columns,
-            data=dff.to_dict('records'),
-            page_size=10,
-            style_table={'margin': '20px'},
-            style_cell={'padding': '10px', 'border': '1px solid #d9d9d9'},
-            style_header={
-                'backgroundColor': '#f1f1f1',
-                'fontWeight': 'bold',
-                'textAlign': 'center',
-                'border': '1px solid #d9d9d9',
-            },
-            style_data_conditional=[
-                {'if': {'column_id': 'country'}, 'textAlign': 'left'},
-                {'if': {'column_id': 'year'}, 'textAlign': 'center'},
-                {'if': {'column_id': 'pop'}, 'textAlign': 'right'},
-            ]
-        )
-        return table, None  # Show table and clear input
-
-    return generate_population_graph(selected_country), input_year  # Show graph
-
-# Run the app
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run_server(debug=True)
