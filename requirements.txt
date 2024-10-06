@@ -11,3 +11,7 @@ Pillow
 mapbox-vector-tile
 lxml
 owslib
+geopy
+Nominatim
+earthengine-api
+googlemaps
