@@ -1,57 +1,75 @@
 import dash
 from dash import dcc, html, Input, Output
-import pandas as pd
-import folium
-from geocode import get_latitude_longitude
-from earth_engine import initialize_earth_engine
+import plotly.express as px
+from geocode import get_latitude_longitude  # Importando a função de geocode.py
 
-# Inicializar Earth Engine
-initialize_earth_engine()
-
-# Dados fictícios para o mapa
-data = {
-    'latitude': [37.7749, 34.0522],
-    'longitude': [-122.4194, -118.2437],
-    'city': ['San Francisco', 'Los Angeles'],
-    'population': [883305, 3990456]
-}
-df = pd.DataFrame(data)
-
+# Inicializa a aplicação Dash
 app = dash.Dash(__name__)
 
+# Layout da aplicação
 app.layout = html.Div([
+    html.H1('Buscar Localização'),
+    html.Div([
+        html.Label('Digite o endereço:'),
+        dcc.Input(id='address', type='text', required=True),
+        html.Button('Buscar', id='search-button', n_clicks=0),
+    ]),
+    html.Div(id='output-address', style={'margin-top': '20px'}),
     html.H1('Mapa Interativo'),
-    dcc.Dropdown(
-        id='city-filter',
-        options=[{'label': city, 'value': city} for city in df['city']],
-        multi=True,
-        placeholder='Selecione as cidades'
-    ),
-    dcc.Graph(id='map', style={'height': '70vh', 'width': '70%', 'margin':'auto'})
+    dcc.Graph(id='map', style={'height': '70vh', 'width': '70%', 'margin': 'auto'})
 ])
 
+# Callback para lidar com o botão de busca e atualizar o mapa
 @app.callback(
+    Output('output-address', 'children'),
     Output('map', 'figure'),
-    Input('city-filter', 'value')
+    Input('search-button', 'n_clicks'),
+    Input('address', 'value')
 )
-def update_map(selected_cities):
-    if not selected_cities:
-        filtered_df = df
-    else:
-        filtered_df = df[df['city'].isin(selected_cities)]
+def update_output(n_clicks, address):
+    # Inicializa as coordenadas do endereço buscado
+    latitude, longitude = None, None
+    address_output = ''
     
+    if n_clicks > 0 and address:
+        latitude, longitude, city_name = get_latitude_longitude(address)
+        address_output = f'Endereço buscado: {address}, Latitude: {latitude}, Longitude: {longitude}, Cidade: {city_name}'
+
+    # Criação do gráfico de dispersão
     fig = px.scatter_mapbox(
-        filtered_df,
-        lat='latitude',
-        lon='longitude',
-        hover_name='city',
-        size='population',
+        lat=[latitude] if latitude is not None else [],
+        lon=[longitude] if longitude is not None else [],
+        hover_name=[address] if latitude is not None else [],
         size_max=15,
-        zoom=4,
-        title='População das Cidades Selecionadas'
+        zoom=17 if latitude is not None and longitude is not None else 4,
+        title='Localização Buscada'
     )
+    
+    # Se o endereço foi buscado, adiciona um marcador para as coordenadas obtidas
+    if latitude is not None and longitude is not None:
+        fig.add_scattermapbox(
+            lat=[latitude],
+            lon=[longitude],
+            mode='markers',
+            marker=dict(size=10, color='red'),
+            name='Localização Buscada'
+        )
+        
+        # Focar no local buscado
+        fig.update_layout(
+            mapbox=dict(
+                center=dict(lat=latitude, lon=longitude),
+                zoom=18
+            )
+        )
+
+    # Configuração do estilo do mapa
     fig.update_layout(mapbox_style="open-street-map")
-    return fig
+    
+    # Atualização das propriedades do marcador
+    fig.update_traces(marker=dict(opacity=0.7, sizemode='diameter', size=10))
+    
+    return address_output, fig
 
 if __name__ == '__main__':
-    app.run_server(host='0.0.0.0', port=8050, debug=True)
+    app.run_server(host='0.0.0.0', port=5000, debug=True)
