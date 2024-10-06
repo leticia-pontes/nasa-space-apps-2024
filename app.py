@@ -1,8 +1,14 @@
 import dash
 from dash import dcc, html, Input, Output
-import plotly.express as px
 import pandas as pd
+import folium
+from geocode import get_latitude_longitude
+from earth_engine import initialize_earth_engine
 
+# Inicializar Earth Engine
+initialize_earth_engine()
+
+# Dados fictícios para o mapa
 data = {
     'latitude': [37.7749, 34.0522],
     'longitude': [-122.4194, -118.2437],

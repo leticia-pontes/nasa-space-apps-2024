@@ -12,6 +12,7 @@ mapbox-vector-tile
 lxml
 owslib
 geopy
-Nominatim
 earthengine-api
 googlemaps
+dash
+python-dotenv
