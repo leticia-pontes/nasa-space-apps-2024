@@ -4,23 +4,23 @@ set -e
 
 echo "Diretório atual: $(pwd)"
 
-if [ -d "utils/" ]; then
-    cd utils/
+if [ -d "src/utils/" ]; then
+    cd src/utils/
 else
-    echo "O diretório utils/ não existe. Saindo..."
+    echo "O diretório src/utils/ não existe. Saindo..."
     exit 1
 fi
 
 if [ -f "download_file.py" ]; then
     python download_file.py
 else
-    echo "O arquivo download_file.py não foi encontrado no diretório utils/. Saindo..."
+    echo "O arquivo download_file.py não foi encontrado no diretório src/utils/. Saindo..."
     exit 1
 fi
 
 echo "Arquivo baixado com sucesso."
 
-cd ..
+cd ../..
 
 echo "Iniciando o servidor..."
-python app.py
+python src/app.py
