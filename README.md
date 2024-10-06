@@ -34,7 +34,7 @@ Before running the project, make sure you have the following installed:
 3. **Run the Container**:
    After building the image, run the container with the command:
    ```bash
-   docker run -d -p 8050:8050 --name nasa-project-container nasa-project-2024
+   docker run -d -p 5000:5000 --name nasa-project-container nasa-project-2024
    ```
 
 ## Access the Application
