@@ -6,7 +6,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-RUN dos2unix entrypoint.sh utils/download_file.py
+RUN dos2unix entrypoint.sh src/utils/download_file.py
 RUN chmod +x entrypoint.sh
 EXPOSE 8050
 ENTRYPOINT ["./entrypoint.sh"]
