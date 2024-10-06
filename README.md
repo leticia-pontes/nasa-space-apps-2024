@@ -34,7 +34,7 @@ Antes de executar o projeto, verifique se você tem o seguinte instalado:
 3. **Executar o Container**:
    Após a construção da imagem, execute o container com o comando:
    ```bash
-   docker run -d -p 8050:8050 --name agrohelp nasa-project-2024
+   docker run -d -p 8050:8050 --name nasa-project-container nasa-project-2024
    ```
 
 ## Acessar a Aplicação
