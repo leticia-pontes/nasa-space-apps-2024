@@ -16,6 +16,8 @@ Before running the project, make sure you have the following installed:
 
 - [Docker](https://www.docker.com/get-started)
 - [WSL](https://docs.microsoft.com/en-us/windows/wsl/install) (if using Windows)
+- `key.json` file in the root directory with valid Google Earth Engine credentials
+- `.env` file with GOOGLE_MAPS_API_KEY and EE_PROJECT_ID, also in the root directory 
 
 ## Settings
 
@@ -41,7 +43,7 @@ Before running the project, make sure you have the following installed:
 
 After running the container, you can access the interactive application in your browser at:
 ```
-http://localhost:8050/
+http://localhost:5000/
 ```
 
 ## Project Structure
