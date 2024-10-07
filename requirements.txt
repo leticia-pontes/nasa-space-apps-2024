@@ -16,3 +16,4 @@ earthengine-api
 googlemaps
 dash
 python-dotenv
+plotly
