@@ -80,6 +80,7 @@ def update_output(n_clicks, address):
     # Atualização das propriedades do marcador
     fig.update_traces(marker=dict(opacity=0.7, sizemode='diameter', size=10))
     
+    # return address_output, moisture_output, fig
     return address_output, moisture_output, fig
 
 if __name__ == '__main__':

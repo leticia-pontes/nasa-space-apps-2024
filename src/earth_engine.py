@@ -1,7 +1,5 @@
-from google.auth.transport.requests import AuthorizedSession
-from google.oauth2 import service_account
-
 import ee
+from google.oauth2 import service_account
 import os
 from dotenv import load_dotenv
 
@@ -16,14 +14,10 @@ def initialize_earth_engine():
             os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
         )
 
-        # Define o escopo correto
-        scoped_credentials = credentials.with_scopes(
-            ['https://www.googleapis.com/auth/earthengine.readonly']
-        )
-        
-        # Inicializa o Earth Engine com as credenciais
-        ee.Initialize(scoped_credentials)
+        # Autentica e inicializa o Earth Engine
+        ee.Initialize(credentials)
         print("Earth Engine initialized.")
+
     except Exception as e:
         print(f"Error initializing Earth Engine: {e}")
 
